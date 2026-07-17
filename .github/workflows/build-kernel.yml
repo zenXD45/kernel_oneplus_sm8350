@@ -1,0 +1,69 @@
+name: Build OnePlus Kernel with ReSukiSU
+
+# 1. TRIGER: When does this run?
+# This tells GitHub to run this script whenever you push code to the "sixteen" branch,
+# or when you manually click the "Run workflow" button in the Actions tab.
+on:
+  push:
+    branches:
+      - sixteen
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Kernel
+    # 2. ENVIRONMENT: What kind of computer does this run on?
+    # We use the latest Ubuntu Linux server provided by GitHub for free.
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. GET THE CODE: Download your kernel source code to the GitHub server
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive' # This ensures it downloads the ReSukiSU submodule too!
+          fetch-depth: 0
+
+      # 4. INSTALL DEPENDENCIES: Install the tools needed to compile a Linux kernel
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libssl-dev libfl-dev curl wget cpio zstd
+
+      # 5. GET THE COMPILER: Download the exact Clang toolchain you use locally
+      - name: Setup Clang Toolchain
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/toolchain
+          cd $GITHUB_WORKSPACE/toolchain
+          # Downloading a highly optimized Clang toolchain commonly used for Android kernels (Proton Clang)
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git .
+
+      # 6. COMPILE THE KERNEL: This perfectly mirrors your local build_kernel.sh
+      - name: Compile Kernel
+        run: |
+          # Set up environment variables so the system knows where the compiler is
+          export PATH="$GITHUB_WORKSPACE/toolchain/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          
+          export OPTIMIZATION_FLAGS="-O2 -march=armv8.2-a -mtune=cortex-a78 -fno-strict-aliasing -mllvm -inline-threshold=325"
+
+          # Clean the workspace
+          make ARCH=arm64 O=out clean
+          make ARCH=arm64 O=out mrproper
+          
+          # Merge your configs
+          make ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 vendor/lahaina-qgki_defconfig vendor/oplus_yupik_QGKI.config
+          make ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
+
+          # Build it using all available CPU cores on the GitHub server!
+          make -j$(nproc) ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="$OPTIMIZATION_FLAGS" EXTRA_CFLAGS="$OPTIMIZATION_FLAGS" all
+
+      # 7. UPLOAD THE RESULT: Save the compiled kernel image so you can download it
+      - name: Upload Kernel Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OnePlus-Kernel-ReSukiSU
+          path: out/arch/arm64/boot/Image
