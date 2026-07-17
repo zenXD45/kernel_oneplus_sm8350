@@ -8,6 +8,9 @@ on:
     branches:
       - sixteen
   workflow_dispatch:
+  # Run automatically every day at midnight (UTC) to catch new ReSukiSU updates
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   build:
@@ -23,6 +26,11 @@ jobs:
         with:
           submodules: 'recursive' # This ensures it downloads the ReSukiSU submodule too!
           fetch-depth: 0
+
+      # 3.5. AUTO-UPDATE RESUKISU: Fetch the absolute latest ReSukiSU from GitHub
+      - name: Auto-Update ReSukiSU
+        run: |
+          git submodule update --remote KernelSU
 
       # 4. INSTALL DEPENDENCIES: Install the tools needed to compile a Linux kernel
       - name: Install Build Dependencies
