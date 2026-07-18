@@ -115,8 +115,31 @@ jobs:
           # Copy the compiled kernel image (the workflow already outputs to out/arch/arm64/boot/Image)
           cp ../out/arch/arm64/boot/Image .
           
+          # Fix shebang for AOSP/Lineage Recovery compatibility (Android 11+ uses /system/bin/sh)
+          sed -i 's|#!/sbin/sh|#!/system/bin/sh|g' META-INF/com/google/android/update-binary
+          
           # Create the flashable zip in the workspace root
-          zip -r9 ../AnyKernel3-Realme-9-5G-SE-Q3s.zip *
+          zip -r9 ../AnyKernel3-Realme-9-5G-SE-Q3s-unsigned.zip *
+          
+          cd ..
+          
+          # Sign the zip with AOSP test keys so Lineage Recovery accepts it
+          wget -q https://raw.githubusercontent.com/LineageOS/android_build/lineage-21.0/target/product/security/testkey.x509.pem
+          wget -q https://raw.githubusercontent.com/LineageOS/android_build/lineage-21.0/target/product/security/testkey.pk8
+          
+          # Find apksigner from Android SDK build-tools
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+          
+          # Sign using JAR signing (v1) only
+          $APKSIGNER sign \
+            --key testkey.pk8 \
+            --cert testkey.x509.pem \
+            --v1-signing-enabled true \
+            --v2-signing-enabled false \
+            --v3-signing-enabled false \
+            --v4-signing-enabled false \
+            --in AnyKernel3-Realme-9-5G-SE-Q3s-unsigned.zip \
+            --out AnyKernel3-Realme-9-5G-SE-Q3s.zip
 
       # 8. UPLOAD THE RESULT: Save the AnyKernel3 flashable zip so you can download it
       - name: Upload AnyKernel3 Flashable Zip
