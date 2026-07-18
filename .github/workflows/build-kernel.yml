@@ -16,8 +16,8 @@ jobs:
   build:
     name: Build Kernel
     # 2. ENVIRONMENT: What kind of computer does this run on?
-    # We use the latest Ubuntu Linux server provided by GitHub for free.
-    runs-on: ubuntu-latest
+    # We use the Ubuntu 22.04 Linux server provided by GitHub for free.
+    runs-on: ubuntu-22.04
 
     steps:
       # 3. GET THE CODE: Download your kernel source code to the GitHub server
