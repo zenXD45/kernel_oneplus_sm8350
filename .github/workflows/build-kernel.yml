@@ -71,7 +71,7 @@ jobs:
           make ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 olddefconfig
 
           # Build it using all available CPU cores on the GitHub server!
-          make -j$(nproc) ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="$OPTIMIZATION_FLAGS" EXTRA_CFLAGS="$OPTIMIZATION_FLAGS" all
+          make -j$(nproc) ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="$OPTIMIZATION_FLAGS" EXTRA_CFLAGS="$OPTIMIZATION_FLAGS" Image
 
       # 7. PACKAGE ANYKERNEL3: Create a flashable zip for Realme 9 5G SE / Q3s
       - name: Package AnyKernel3 Zip
@@ -115,11 +115,8 @@ jobs:
           # Copy the compiled kernel image (the workflow already outputs to out/arch/arm64/boot/Image)
           cp ../out/arch/arm64/boot/Image .
           
-          # Strip debug symbols to drastically reduce size and prevent "mem error" in Recovery
-          $GITHUB_WORKSPACE/toolchain/bin/aarch64-linux-gnu-strip --strip-unneeded Image
-          
-          # Fix shebang for AOSP/Lineage Recovery compatibility (Android 11+ uses /system/bin/sh)
-          sed -i 's|#!/sbin/sh|#!/system/bin/sh|g' META-INF/com/google/android/update-binary
+          # Ensure the kernel image isn't corrupted (do not strip)
+          # Use unmodified update-binary for wider recovery compatibility
           
           # Create the flashable zip (without apksigner to avoid CI/CD errors)
           zip -r9 ../AnyKernel3-Realme-9-5G-SE-Q3s.zip *
