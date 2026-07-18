@@ -69,9 +69,54 @@ jobs:
           # Build it using all available CPU cores on the GitHub server!
           make -j$(nproc) ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 KCFLAGS="$OPTIMIZATION_FLAGS" EXTRA_CFLAGS="$OPTIMIZATION_FLAGS" all
 
-      # 7. UPLOAD THE RESULT: Save the compiled kernel image so you can download it
-      - name: Upload Kernel Image Artifact
+      # 7. PACKAGE ANYKERNEL3: Create a flashable zip for Realme 9 5G SE / Q3s
+      - name: Package AnyKernel3 Zip
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AnyKernel3
+          cd AnyKernel3
+          rm -rf .git README.md
+          
+          # Create our custom anykernel.sh configuration for Realme Q3s / 9 5G SE
+          cat << 'EOF' > anykernel.sh
+          # AnyKernel3 Ramdisk Mod Script
+          # osm0sis @ xda-developers
+          
+          properties() { '
+          kernel.string=Custom Kernel for Realme 9 5G SE / Q3s
+          do.devicecheck=1
+          do.modules=0
+          do.systemless=1
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=RMX3461
+          device.name2=RE54B4L1
+          device.name3=lemonx
+          device.name4=lemon7
+          device.name5=
+          supported.versions=
+          supported.patchlevels=
+          '; }
+          
+          block=/dev/block/bootdevice/by-name/boot;
+          is_slot_device=auto;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
+          
+          . tools/ak3-core.sh;
+          
+          dump_boot;
+          write_boot;
+          EOF
+          
+          # Copy the compiled kernel image (the workflow already outputs to out/arch/arm64/boot/Image)
+          cp ../out/arch/arm64/boot/Image .
+          
+          # Create the flashable zip in the workspace root
+          zip -r9 ../AnyKernel3-Realme-9-5G-SE-Q3s.zip *
+
+      # 8. UPLOAD THE RESULT: Save the AnyKernel3 flashable zip so you can download it
+      - name: Upload AnyKernel3 Flashable Zip
         uses: actions/upload-artifact@v4
         with:
-          name: OnePlus-Kernel-ReSukiSU
-          path: out/arch/arm64/boot/Image
+          name: AnyKernel3-Realme-9-5G-SE-Q3s-ReSukiSU
+          path: AnyKernel3-Realme-9-5G-SE-Q3s.zip
