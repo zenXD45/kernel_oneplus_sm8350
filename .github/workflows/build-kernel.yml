@@ -130,15 +130,28 @@ jobs:
           name: AnyKernel3-Realme-9-5G-SE-Q3s-ReSukiSU
           path: AnyKernel3-Realme-9-5G-SE-Q3s.zip
 
+      - name: Upload Raw Kernel Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kernel-Image-Realme-9-5G-SE-Q3s-ReSukiSU
+          path: out/arch/arm64/boot/Image
+
       # 9. PUBLISH TO RELEASES: Put the zip on the GitHub Releases page
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ github.run_number }}"
           name: "Automated Kernel Build (Run ${{ github.run_number }})"
-          files: AnyKernel3-Realme-9-5G-SE-Q3s.zip
+          files: |
+            AnyKernel3-Realme-9-5G-SE-Q3s.zip
+            out/arch/arm64/boot/Image
           body: |
             Automated ReSukiSU Kernel Build for Realme 9 5G SE / Realme Q3s
             
             **How to install:**
-            - Flash the attached `AnyKernel3-Realme-9-5G-SE-Q3s.zip` in TWRP, KernelFlasher, FKM, or the ReSukiSU manager.
+            - **Rooted Users (No Custom Recovery needed):** Open the KernelSU / ReSukiSU manager app, go to the Modules tab, and select "Install from storage". Choose the `AnyKernel3-Realme-9-5G-SE-Q3s.zip` file.
+            - **Custom Recovery:** Flash the `AnyKernel3-Realme-9-5G-SE-Q3s.zip` in TWRP or OrangeFox.
+            - **Other Apps:** Flash using KernelFlasher or Franco Kernel Manager (FKM).
+            - **Advanced:** Use the raw `Image` to manually patch and flash via fastboot.
+            
+            *(Note: You **cannot** install the zip via `adb sideload` in Stock Recovery, as stock recoveries strictly block unsigned custom zips.)*
