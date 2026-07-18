@@ -12,6 +12,10 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+# Ensure the workflow has permission to create GitHub Releases
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Kernel
@@ -120,3 +124,16 @@ jobs:
         with:
           name: AnyKernel3-Realme-9-5G-SE-Q3s-ReSukiSU
           path: AnyKernel3-Realme-9-5G-SE-Q3s.zip
+
+      # 9. PUBLISH TO RELEASES: Put the zip on the GitHub Releases page
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ github.run_number }}"
+          name: "Automated Kernel Build (Run ${{ github.run_number }})"
+          files: AnyKernel3-Realme-9-5G-SE-Q3s.zip
+          body: |
+            Automated ReSukiSU Kernel Build for Realme 9 5G SE / Realme Q3s
+            
+            **How to install:**
+            - Flash the attached `AnyKernel3-Realme-9-5G-SE-Q3s.zip` in TWRP, KernelFlasher, FKM, or the ReSukiSU manager.
